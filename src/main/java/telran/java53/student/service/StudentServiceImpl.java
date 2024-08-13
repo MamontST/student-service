@@ -3,6 +3,7 @@ package telran.java53.student.service;
 import java.util.List;
 import java.util.Set;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -17,16 +18,16 @@ import telran.java53.student.model.Student;
 @Component
 @RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
-	
-	final StudentRepository studentRepository;
 
+	final StudentRepository studentRepository;
+	final ModelMapper modelMapper;
 
 	@Override
 	public Boolean addStudent(StudentAddDto studentAddDto) {
 		if (studentRepository.findById(studentAddDto.getId()).isPresent()) {
 			return false;
 		}
-		Student student = new Student(studentAddDto.getId(), studentAddDto.getName(), studentAddDto.getPassword());
+		Student student = modelMapper.map(studentAddDto, Student.class);
 		studentRepository.save(student);
 		return true;
 	}
@@ -35,7 +36,7 @@ public class StudentServiceImpl implements StudentService {
 	public StudentDto findStudent(Long id) {
 		Student student = studentRepository.findById(id)
 				.orElseThrow(() -> new StudentNotFoundException("Student with id " + id + " not found"));
-		return new StudentDto(id, student.getName(), student.getScores());
+		return modelMapper.map(student, StudentDto.class);
 	}
 
 	@Override
@@ -68,13 +69,12 @@ public class StudentServiceImpl implements StudentService {
 	@Override
 	public List<StudentDto> findStudentsByName(String name) {
 		return studentRepository.findByNameIgnoreCase(name)
-				.map(student -> new StudentDto(student.getId(), student.getName(), student.getScores()))
-				.toList();
+				.map(student -> new StudentDto(student.getId(), student.getName(), student.getScores())).toList();
 	}
 
 	@Override
 	public Long getStudentsQuantityByNames(Set<String> names) {
-		
+
 //		return studentRepository.findAll().stream()
 //				.filter(student -> names.contains(student.getName()))
 //				.count();
@@ -90,9 +90,8 @@ public class StudentServiceImpl implements StudentService {
 //				.filter(s -> s.getScores().containsKey(exam) && s.getScores().get(exam) > minScore)
 //				.map(s -> new StudentDto(s.getId(), s.getName(), s.getScores()))
 //				.toList();
-	    return studentRepository.findByExamAndMinScore(exam, minScore)
-                .map(s -> new StudentDto(s.getId(), s.getName(), s.getScores()))
-                .toList();
+		return studentRepository.findByExamAndMinScore(exam, minScore)
+				.map(s -> new StudentDto(s.getId(), s.getName(), s.getScores())).toList();
 	}
 
 }
